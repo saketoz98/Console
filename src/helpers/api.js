@@ -5,16 +5,50 @@ const API = axios.create({
 });
 
 export const executeCode = async (sourceCode) => {
-  try {
     const response = await API.post("/eval", {
-      "code": "var alice = { name: 'Alice', follows: [] };\nvar bob = { name: 'Bob', follows: [alice] };\nalice.follows.push(bob); alice;",
-      "sessionId": "aab9f3ba-7465-4319-820b-555b2e15433d"
+      "code": "let obj = {a:1, b:[1,2,3], c:{d:1}}; obj",
+      "sessionId": "aab9f3b-7465-4319-820b-555b2e15433d"
     });
 
-    console.log(response.data)
+    return response.data
+};
+
+export const getExecutionResponseData = async (code) => {
+  try {
+    const res = await executeCode("src")
+    const data = processExecutionResult(res)
   } catch (error) {
     console.log(error)
   }
-};
+}
 
-executeCode("abc")
+const processExecutionResult = (res) => {
+  const rootKey = res.root
+  const keyStore = res.serialized
+  const data = parseResponse(rootKey, keyStore)
+  console.log(data)
+}
+
+const parseResponse = (key, keyStore) => {
+  const objNode = keyStore[key]
+
+  if(objNode.type === "object"){
+    const tmpObj = {}
+    for(const {key, value} of objNode.value){
+      const keyNode = keyStore[key]
+      tmpObj[keyNode.value] = parseResponse(value, keyStore)
+    }
+    return tmpObj
+  }else if(objNode.type === "array"){
+    const arr = []
+    for(const value of objNode.value){
+      arr.push(parseResponse(value, keyStore))
+    }
+    return arr
+  }else{
+    return objNode.value
+  }
+
+}
+
+await getExecutionResponseData("abc")
