@@ -6,8 +6,8 @@ const API = axios.create({
 
 export const executeCode = async (sourceCode) => {
     const response = await API.post("/eval", {
-      "code": "let obj = {a:1, b:[1,2,3], c:{d:1}}; obj",
-      "sessionId": "aab9f3b-7465-4319-820b-555b2e15433d"
+      "code": "alice",
+      "sessionId": "aab9f3bad-7465-4319-820b-555b2e15433d"
     });
 
     return response.data
@@ -25,24 +25,35 @@ export const getExecutionResponseData = async (code) => {
 const processExecutionResult = (res) => {
   const rootKey = res.root
   const keyStore = res.serialized
-  const data = parseResponse(rootKey, keyStore)
-  console.log(data)
+  const visitedNodes = new Set([rootKey])
+  const data = parseResponse(rootKey, keyStore, visitedNodes)
+  console.table(data)
 }
 
-const parseResponse = (key, keyStore) => {
+const parseResponse = (key, keyStore, visitedNodes) => {
+ 
   const objNode = keyStore[key]
 
   if(objNode.type === "object"){
     const tmpObj = {}
     for(const {key, value} of objNode.value){
       const keyNode = keyStore[key]
-      tmpObj[keyNode.value] = parseResponse(value, keyStore)
+      if(visitedNodes.has(value)){
+        tmpObj[keyNode.value] = "[Circular Reference]"
+      }else{
+        visitedNodes.add(value)
+        tmpObj[keyNode.value] = parseResponse(value, keyStore, visitedNodes)
+      }
     }
     return tmpObj
   }else if(objNode.type === "array"){
     const arr = []
     for(const value of objNode.value){
-      arr.push(parseResponse(value, keyStore))
+      if(visitedNodes.has(value)){
+        arr.push("[Circular Reference]")
+      }
+      visitedNodes.add(value)
+      arr.push(parseResponse(value, keyStore, visitedNodes))
     }
     return arr
   }else{
