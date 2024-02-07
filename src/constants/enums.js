@@ -1,0 +1,7 @@
+export const OUTPUT_LOADING = "OUTPUT_LOADING"
+export const OUTPUT_SUCCESS = "OUTPUT_SUCCESS"
+export const OUTPUT_FAILED = "OUTPUT_FAILED"
+
+
+export const NEXT_COMMAND = "NEXT_COMMAND"
+export const PREV_COMMAND = "PREV_COMMAND"
